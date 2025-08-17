@@ -10,7 +10,8 @@ function App() {
   const [croPrice, setCroPrice] = useState(null)
 
   useEffect(() => {
-    async functionfetchAllData() {
+    // This line is now fixed
+    async function fetchAllData() {
       // --- Fetch Amber Price ---
       try {
         const amberRes = await fetch(`https://api.amber.com.au/v1/sites/${SITE_ID}/prices/current`, {
@@ -54,6 +55,8 @@ function App() {
         const croJson = await croRes.json()
         if (croJson && croJson['crypto-com-chain']) {
           setCroPrice(croJson['crypto-com-chain'].usd)
+        } else {
+          setCroPrice("N/A") // Handle case where data might be missing
         }
       } catch (err) {
         console.error("CRO price fetch failed:", err)
@@ -69,7 +72,7 @@ function App() {
   // Helper function to format price or show status
   const renderPrice = (price, prefix = "$", toFixed = 2) => {
     if (price === null) return "Loading..."
-    if (price === "Error") return "Error"
+    if (price === "Error" || price === "N/A") return price
     if (typeof price === 'string') return `${prefix}${price}` // For BTC
     return `${prefix}${price.toFixed(toFixed)}`
   }
@@ -89,7 +92,7 @@ function App() {
     }}>
       <div style={{border: '1px solid #ccc', borderRadius: '12px', padding: '20px', backgroundColor: 'white'}}>
         <h2>Amber Price</h2>
-        <p style={{fontSize: '2em', margin: 0}}>{renderPrice(amberPrice, "", 2)} ¢/kWh</p>
+        <p style={{fontSize: '2em', margin: 0}}>{renderPrice(amberPrice, "", 2) === "Error" ? "Error" : `${renderPrice(amberPrice, "", 2)} ¢/kWh`}</p>
       </div>
 
       <div style={{border: '1px solid #ccc', borderRadius: '12px', padding: '20px', backgroundColor: 'white'}}>
