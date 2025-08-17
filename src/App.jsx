@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 
-// Your API Key and Site ID are now directly in the code
 const AMBER_API_KEY = 'psk_c97ca862a28306694cbd262795ed7cc4'
 const SITE_ID = '6102336833'
 
@@ -13,29 +12,48 @@ function App() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Fetch Amber Price
         const amberRes = await fetch(`https://api.amber.com.au/v1/sites/${SITE_ID}/prices/current`, {
           headers: { Authorization: `Bearer ${AMBER_API_KEY}` }
         })
-        const amberData = await amberRes.json()
-        setAmberPrice(amberData[0]?.perKwh)
+        if (amberRes.ok) {
+          const amberData = await amberRes.json()
+          if (amberData && amberData.length > 0) {
+            setAmberPrice(amberData[0].perKwh)
+          }
+        }
 
+        // Fetch Amber Forecast
         const forecastRes = await fetch(`https://api.amber.com.au/v1/sites/${SITE_ID}/prices`, {
           headers: { Authorization: `Bearer ${AMBER_API_KEY}` }
         })
-        const forecastData = await forecastRes.json()
-        setForecast(forecastData.slice(0, 24)) // Next 12 hours (30-min intervals)
+        if (forecastRes.ok) {
+          const forecastData = await forecastRes.json()
+          setForecast(forecastData.slice(0, 24))
+        }
 
+        // Fetch BTC Price
         const btcRes = await fetch('https://api.coindesk.com/v1/bpi/currentprice/BTC.json')
-        const btcJson = await btcRes.json()
-        setBtcPrice(btcJson.bpi.USD.rate)
+        if (btcRes.ok) {
+          const btcJson = await btcRes.json()
+          setBtcPrice(btcJson.bpi.USD.rate)
+        }
 
+        // Fetch CRO Price (with a safety check)
         const croRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=crypto-com-chain&vs_currencies=usd')
-        const croJson = await croRes.json()
-        setCroPrice(croJson['crypto-com-chain'].usd)
+        if (croRes.ok) {
+          const croJson = await croRes.json()
+          // THIS IS THE FIX: Check if the data exists before using it
+          if (croJson && croJson['crypto-com-chain']) {
+            setCroPrice(croJson['crypto-com-chain'].usd)
+          }
+        }
+
       } catch (err) {
-        console.error(err)
+        console.error("Failed to fetch data:", err)
       }
     }
+
     fetchData()
     // Refresh the data every 5 minutes
     const interval = setInterval(fetchData, 300000)
